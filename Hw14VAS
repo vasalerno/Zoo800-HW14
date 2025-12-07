@@ -1,0 +1,85 @@
+#VAS Hw14 - Solo Work (using Evan Peepos' data)
+
+library(readr)
+library(dplyr)
+# ----- OBJECTIVE 1 ----- #
+#OBJ 1- A - Data from Evan Peepo
+pinyon_juniper_growth <- read_csv("pinyon_juniper_growth.csv")
+
+#OBJ 1- B
+#Create two models (a full and an alternative)
+lm_model <- lm(growth_mm ~ vwc_percent + species, data = EPdata)
+lm_alt_model <- lm(growth_mm ~ vwc_percent, data = EPdata)
+
+print(lm_model)
+print(lm_alt_model)
+
+plot(growth_mm ~ vwc_percent, data = EPdata, 
+     main = "Linear Regression Plot - EPdata",
+     xlab = "vwc_percent", 
+     ylab = "growth_mm")
+
+#Add the fitted regression line using abline()
+abline(lm_model, col = "red", lwd = 2) 
+abline(lm_alt_model, col = "green", lwd = 2) 
+
+
+#OBJ 1- C
+-logLik(lm_model)
+-logLik(lm_alt_model)
+
+#ANSWER: The full model (lm_model) has the lower NLL.
+
+#OBJ 1- D
+install.packages("lmtest")
+
+library(lmtest)
+
+lrtest(lm_model, lm_alt_model)
+
+#Answer: The alternative model seems to fit just as well as the null model and the pvalue with a significant close to 0.001 (***) 
+#indicates that the alternative model fits maybe better.
+
+
+# ----- OBJECTIVE 2 ----- #
+#In Objective 1, you determined whether a model with an interaction is better than one without. 
+#However, both models could still be bad. A more comprehensive model selection process might involve fitting the full set of possible models 
+#and comparing their AIC values in a table.A. Develop an AIC table (in a data frame) to compare
+
+library(data.table) 
+# Formula for AIC: AIC = 2*(-Lmax – K)
+
+full_model <- lm(growth_mm ~ vwc_percent * species, data = EPdata) 
+main_effect_model <- lm(growth_mm ~ vwc_percent + species, data = EPdata) 
+variable1_model <- lm(growth_mm ~ vwc_percent, data = EPdata) 
+variable2_model <- lm(growth_mm ~ species, data = EPdata) 
+intercept_model <- lm(growth_mm ~ 1, data = EPdata)
+
+#Create an (empty) AIC table with the model headers of interes:
+AIC_table <- data.table(
+  Model = c("Full Model",
+            "Main effects Model",
+            "Single variable  - 1 ",
+            "Single variable  - 2 ",
+            "Intercept only"),
+ 
+#Populate the AIC table with based on the models from above
+  AIC_value = c(
+    AIC(full_model),
+    AIC(main_effect_model),
+    AIC(variable1_model),
+    AIC(variable2_model),
+    AIC(intercept_model)
+  )
+)
+
+# Calculate the Delta AIC valuees for the table and populate them in the table (Best AIC value - candidate AIC)
+AIC_table[, Delta_AIC := AIC_value - min(AIC_value)]
+
+AIC_table
+
+#B. Which model or models are supported by AIC? What does this mean ecologically?
+#Answer: The best model supported by the AIC table /Delta AIC is the Main Effects Model. This is the one that had the lowest AIC value. Also because the Delta AIC 
+#of the Full Model is <= 2 we can also say that this model is also as good as the Main effects model for this data. 
+#This ecologically means that VWC percent and species affect growth in an independent from each other, and because both models were appropriate 
+#for this data it means that maybe species is less important for predicting growth than vwc percent (but it is inconclusive). 
